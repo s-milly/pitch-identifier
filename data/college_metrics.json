@@ -67,5 +67,37 @@
    "Fastball": 4,
    "Slider": 734
   }
- }
+ },
+ "fastballs_called_changeup": [
+  {
+   "band": "84 or less",
+   "pitches": 43,
+   "trackman": 0.721,
+   "model": 0.023
+  },
+  {
+   "band": "84-86",
+   "pitches": 148,
+   "trackman": 0.574,
+   "model": 0.041
+  },
+  {
+   "band": "86-88",
+   "pitches": 335,
+   "trackman": 0.415,
+   "model": 0.012
+  },
+  {
+   "band": "88-90",
+   "pitches": 476,
+   "trackman": 0.082,
+   "model": 0.002
+  },
+  {
+   "band": "over 90",
+   "pitches": 737,
+   "trackman": 0.005,
+   "model": 0.001
+  }
+ ]
 }

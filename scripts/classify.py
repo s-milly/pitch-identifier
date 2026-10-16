@@ -24,3 +24,11 @@ def predict(model, X):
         scores[:, i % k] += [walk(tree, row) for row in X]
     p = np.exp(scores - scores.max(1, keepdims=True))
     return p / p.sum(1, keepdims=True)
+
+
+def compact(tree):
+    """Keep only what prediction needs, rounded, so the browser download stays small."""
+    if "leaf_value" in tree:
+        return {"leaf_value": round(tree["leaf_value"], 6)}
+    return {"split_feature": tree["split_feature"], "threshold": round(tree["threshold"], 6),
+            "left_child": compact(tree["left_child"]), "right_child": compact(tree["right_child"])}

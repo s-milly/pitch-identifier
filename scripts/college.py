@@ -80,4 +80,16 @@ print(f"\n{results['pitches']:,} pitches, {results['pitchers']} pitchers")
 print("\nhand tag (rows) vs smoothed model call (columns):")
 print(pd.crosstab(t["tagged"], t["model_smoothed"]))
 results["confusion"] = pd.crosstab(t["tagged"], t["model_smoothed"]).to_dict()
+
+# Where TrackMan's auto-tags miss: slower fastballs called changeups.
+fb = t[t["tagged"] == "Fastball"]
+bands = pd.cut(fb["velo"], [0, 84, 86, 88, 90, 200], labels=["84 or less", "84-86", "86-88", "88-90", "over 90"])
+results["fastballs_called_changeup"] = [
+    {"band": str(b), "pitches": int(len(g)),
+     "trackman": round(float((g["trackman"] == "ChangeUp").mean()), 3),
+     "model": round(float((g["model_smoothed"] == "ChangeUp").mean()), 3)}
+    for b, g in fb.groupby(bands, observed=True)]
+print("\nfastballs called changeups, by velocity:")
+for r in results["fastballs_called_changeup"]:
+    print(f"  {r['band']:>10s}  n={r['pitches']:4d}  TrackMan {r['trackman']:.0%}  model {r['model']:.0%}")
 (ROOT / "data" / "college_metrics.json").write_text(json.dumps(results, indent=1))

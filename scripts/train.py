@@ -19,6 +19,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import GroupKFold
 
+from classify import compact
 from features import FEATURES, smooth
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +53,6 @@ metrics = {
 final = lgb.LGBMClassifier(**PARAMS).fit(X, y)
 dump = final.booster_.dump_model()
 model = {"features": FEATURES, "classes": classes,
-         "trees": [t["tree_structure"] for t in dump["tree_info"]]}
+         "trees": [compact(t["tree_structure"]) for t in dump["tree_info"]]}
 (ROOT / "site" / "model.json").write_text(json.dumps(model, separators=(",", ":")))
 print(f"model: {len(model['trees'])} trees -> site/model.json")
