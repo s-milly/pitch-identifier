@@ -1,8 +1,12 @@
 """Train the pitch classifier and export it for the browser.
 
 Evaluation splits by pitcher (GroupKFold), so every score comes from
-pitchers the model never saw in training. Splitting by pitch would leak:
-a pitcher's sliders look like his other sliders.
+pitchers the model never saw in training, in either season. Splitting by
+pitch would leak: a pitcher's sliders look like his other sliders.
+
+Two scores are reported: one pitch on its own (what the web form does),
+and with each pitch's call smoothed over the pitcher's similar pitches
+(what the Rapsodo script does with a whole bullpen).
 
 Writes data/metrics.json and site/model.json (LightGBM trees as JSON).
 """
@@ -15,7 +19,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import GroupKFold
 
-from features import FEATURES
+from features import FEATURES, smooth
 
 ROOT = Path(__file__).resolve().parents[1]
 PARAMS = dict(objective="multiclass", n_estimators=150, num_leaves=15,
@@ -23,19 +27,22 @@ PARAMS = dict(objective="multiclass", n_estimators=150, num_leaves=15,
 
 df = pd.read_parquet(ROOT / "data" / "statcast_features.parquet")
 classes = sorted(df["label"].unique())
-X, y, groups = df[FEATURES], df["label"].map(classes.index), df["pitcher"]
+X, y, groups = df[FEATURES], df["label"].map(classes.index), df["pid"]
 
-pred = np.empty(len(df), dtype=int)
+prob = np.zeros((len(df), len(classes)))
 for fold, (tr, te) in enumerate(GroupKFold(n_splits=5).split(X, y, groups)):
     m = lgb.LGBMClassifier(**PARAMS).fit(X.iloc[tr], y.iloc[tr])
-    pred[te] = m.predict(X.iloc[te])
-    print(f"fold {fold + 1}: {accuracy_score(y.iloc[te], pred[te]):.3f}")
+    prob[te] = m.predict_proba(X.iloc[te])
+    print(f"fold {fold + 1}: {accuracy_score(y.iloc[te], prob[te].argmax(1)):.3f}")
 
+single = accuracy_score(y, prob.argmax(1))
+pred = smooth(df, prob).argmax(1)
 acc = accuracy_score(y, pred)
-print(f"\nheld-out-pitcher accuracy: {acc:.3f}\n")
+print(f"\nheld-out-pitcher accuracy: {single:.3f} one pitch at a time, {acc:.3f} smoothed\n")
 print(classification_report(y, pred, target_names=classes, digits=3))
 metrics = {
-    "accuracy": acc, "pitches": len(df), "pitchers": int(groups.nunique()),
+    "accuracy_single": single, "accuracy": acc, "pitches": len(df), "pitchers": int(groups.nunique()),
+    "seasons": sorted(int(s) for s in df["season"].unique()),
     "classes": classes,
     "report": classification_report(y, pred, target_names=classes, output_dict=True),
     "confusion": confusion_matrix(y, pred).tolist(),

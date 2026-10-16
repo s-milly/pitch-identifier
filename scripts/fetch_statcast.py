@@ -10,7 +10,8 @@ from pybaseball import cache, statcast
 
 SEASONS = {2024: ("2024-03-20", "2024-09-30"), 2025: ("2025-03-18", "2025-09-28")}
 KEEP = ["game_date", "pitcher", "player_name", "p_throws", "pitch_type",
-        "release_speed", "release_spin_rate", "pfx_x", "pfx_z"]
+        "release_speed", "release_spin_rate", "pfx_x", "pfx_z",
+        "spin_axis", "release_pos_x", "release_pos_z", "release_extension"]
 
 year = int(sys.argv[1]) if len(sys.argv) > 1 else 2025
 start, end = SEASONS[year]

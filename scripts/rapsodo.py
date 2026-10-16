@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from features import BASE, add_relative
+from features import BASE, add_relative, smooth
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -21,6 +21,7 @@ COLUMNS = {
     "spin": ["Total Spin", "Spin Rate"],
     "ivb": ["VB (trajectory)", "Induced Vertical Break", "Vertical Break"],
     "hb": ["HB (trajectory)", "Horizontal Break"],
+    "axis": ["Spin Direction", "Spin Axis"],
     "tagged": ["Pitch Type"],
 }
 
@@ -38,10 +39,24 @@ def read_export(path):
             raise SystemExit(f"no column for {key}; columns are: {list(df.columns)}")
         picked[key] = hit
     print("using columns:", {k: v for k, v in picked.items() if v})
-    out = pd.DataFrame({k: pd.to_numeric(df[v], errors="coerce") for k, v in picked.items() if k != "tagged"})
+    out = pd.DataFrame({k: pd.to_numeric(df[v], errors="coerce")
+                        for k, v in picked.items() if k not in ("tagged", "axis")})
+    out["axis"] = df[picked["axis"]].map(clock_to_degrees)
     if picked["tagged"]:
         out["tagged"] = df[picked["tagged"]]
-    return out.dropna(subset=BASE)
+    return out.dropna(subset=BASE + ["axis"]).reset_index(drop=True)
+
+
+def clock_to_degrees(value):
+    """Rapsodo reports spin direction as a clock tilt like "1:15"; Statcast uses
+    degrees with 12:00 (pure backspin) at 180 and each hour worth 30."""
+    try:
+        if ":" not in str(value):
+            return float(value)
+        h, m = str(value).split(":")[:2]
+        return (180 + 30 * (int(h) % 12 + int(m) / 60)) % 360
+    except ValueError:
+        return np.nan
 
 
 def predict(model, X):
@@ -71,11 +86,18 @@ hard = df["velo"] >= df["velo"].quantile(0.85)
 if df.loc[hard, "hb"].median() < 0:
     df["hb"] = -df["hb"]
     print("flipped horizontal break so the fastball runs arm side")
+# Same check for spin direction: a fastball's tilt leans to the arm side (past 180).
+if ((df.loc[hard, "axis"] - 180) % 360).median() > 180:
+    df["axis"] = (360 - df["axis"]) % 360
+    print("mirrored spin direction so the fastball tilts arm side")
 df["pitcher"] = "me"
 df = add_relative(df)
 
 model = json.loads((ROOT / "site" / "model.json").read_text())
 probs = predict(model, df[model["features"]].to_numpy())
+# A bullpen is short, so vote over fewer neighbors than the 10 used on MLB seasons,
+# enough to steady a call without pulling in a different pitch type.
+probs = smooth(df, probs, k=max(1, min(10, len(df) // 8)))
 df["call"] = [model["classes"][i] for i in probs.argmax(1)]
 df["confidence"] = probs.max(1).round(2)
 cols = ["velo", "spin", "ivb", "hb"] + (["tagged"] if "tagged" in df else []) + ["call", "confidence"]
