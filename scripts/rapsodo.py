@@ -5,12 +5,12 @@ Prints each pitch with the model's call, and, when the export has a
 Pitch Type column, how often the model agrees with the tagged type.
 """
 import argparse
-import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from classify import load_model, predict
 from features import BASE, add_relative, smooth
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,21 +59,6 @@ def clock_to_degrees(value):
         return np.nan
 
 
-def predict(model, X):
-    """Evaluate the exported LightGBM trees, the same way the web page does."""
-    def walk(node, row):
-        while "leaf_value" not in node:
-            go_left = row[node["split_feature"]] <= node["threshold"]
-            node = node["left_child"] if go_left else node["right_child"]
-        return node["leaf_value"]
-    k = len(model["classes"])
-    scores = np.zeros((len(X), k))
-    for i, tree in enumerate(model["trees"]):
-        scores[:, i % k] += [walk(tree, row) for row in X]
-    p = np.exp(scores - scores.max(1, keepdims=True))
-    return p / p.sum(1, keepdims=True)
-
-
 ap = argparse.ArgumentParser()
 ap.add_argument("csv")
 ap.add_argument("--throws", choices=["R", "L"], required=True)
@@ -93,7 +78,7 @@ if ((df.loc[hard, "axis"] - 180) % 360).median() > 180:
 df["pitcher"] = "me"
 df = add_relative(df)
 
-model = json.loads((ROOT / "site" / "model.json").read_text())
+model = load_model()
 probs = predict(model, df[model["features"]].to_numpy())
 # A bullpen is short, so vote over fewer neighbors than the 10 used on MLB seasons,
 # enough to steady a call without pulling in a different pitch type.

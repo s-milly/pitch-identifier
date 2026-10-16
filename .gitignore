@@ -2,3 +2,4 @@ __pycache__/
 data/raw/
 data/rapsodo/
 data/statcast_features.parquet
+data/college/

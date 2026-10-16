@@ -1,0 +1,71 @@
+{
+ "pitches": 3331,
+ "pitchers": 32,
+ "model": {
+  "accuracy": 0.8898228760132092,
+  "by_type": {
+   "ChangeUp": 0.946,
+   "Curveball": 0.865,
+   "Cutter": 0.532,
+   "Fastball": 0.958,
+   "Slider": 0.763
+  }
+ },
+ "model_smoothed": {
+  "accuracy": 0.9012308616031222,
+  "by_type": {
+   "ChangeUp": 0.881,
+   "Curveball": 0.825,
+   "Cutter": 0.574,
+   "Fastball": 0.984,
+   "Slider": 0.789
+  }
+ },
+ "trackman": {
+  "accuracy": 0.7802461723206244,
+  "by_type": {
+   "ChangeUp": 0.953,
+   "Curveball": 0.917,
+   "Cutter": 0.213,
+   "Fastball": 0.785,
+   "Slider": 0.695
+  }
+ },
+ "confusion": {
+  "ChangeUp": {
+   "ChangeUp": 340,
+   "Curveball": 0,
+   "Cutter": 1,
+   "Fastball": 13,
+   "Slider": 19
+  },
+  "Curveball": {
+   "ChangeUp": 4,
+   "Curveball": 189,
+   "Cutter": 0,
+   "Fastball": 1,
+   "Slider": 134
+  },
+  "Cutter": {
+   "ChangeUp": 1,
+   "Curveball": 1,
+   "Cutter": 27,
+   "Fastball": 9,
+   "Slider": 21
+  },
+  "Fastball": {
+   "ChangeUp": 33,
+   "Curveball": 3,
+   "Cutter": 3,
+   "Fastball": 1712,
+   "Slider": 22
+  },
+  "Slider": {
+   "ChangeUp": 8,
+   "Curveball": 36,
+   "Cutter": 16,
+   "Fastball": 4,
+   "Slider": 734
+  }
+ }
+}
