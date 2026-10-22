@@ -141,9 +141,19 @@ footer { font-size: 13px; color: var(--muted); }
   #map text { font-size: 19px; }
 }
 @media (prefers-reduced-motion: reduce) { .bar-row .fill, .tip { transition: none; } }
+/* Top bar: back to the portfolio and a link to the code, same as Four Fronts */
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: -32px; }
+.topbar .back { color: var(--ink-2); text-decoration: none; font-size: 15px; }
+.topbar .back:hover { color: var(--ink); }
+.topbar .source { font-size: 14px; font-weight: 500; text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; white-space: nowrap; }
+.topbar .source:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 
 <div class="wrap">
+  <nav class="topbar" aria-label="Site">
+    <a class="back" href="https://s-milly.github.io/#projects">← Shawn Miller</a>
+    <a class="source" href="https://github.com/s-milly/pitch-identifier" target="_blank" rel="noopener">View the code on GitHub</a>
+  </nav>
   <header>
     <p class="eyebrow">Machine learning · Baseball</p>
     <h1>What pitch was that?</h1>
