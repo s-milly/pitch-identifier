@@ -6,10 +6,10 @@
 <meta name="description" content="A pitch classifier trained on 1.4 million MLB pitches, tested on pitchers it never saw and on college pitchers tracked by TrackMan.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* One reading column, same tokens as the Super Bowl page so the projects read as a set.
-   The identifier is the centerpiece: inputs on the left, the movement map and the call on the right. */
+/* Same tokens as the Super Bowl page so the projects read as a set.
+   The page is the tool: inputs on the left, the call and the movement map in the middle, the odds on the right. */
 :root {
   --bg: #F5F6F8;
   --surface: #FFFFFF;
@@ -25,6 +25,8 @@
   --cloud: rgba(14,19,27,.16);
   --track: #EEF0F3;
   --field: #F7F8FA;
+  --lift: 0 1px 2px rgba(14,19,27,.06), 0 8px 24px -12px rgba(14,19,27,.18);
+  --ease: cubic-bezier(0.2, 0, 0, 1);
   --font-display: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -33,6 +35,7 @@
     --bg: #0A0E14; --surface: #111722; --ink: #EEF1F5; --ink-2: #B4BBC7; --muted: #8590A0;
     --grid: #1E2632; --axis: #2E3846; --line: rgba(255,255,255,.08); --accent: #E3B341;
     --model: #B8871A; --trackman: #3987E5; --cloud: rgba(238,241,245,.14); --track: #1A212C; --field: #0D121A;
+    --lift: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
     color-scheme: dark;
   }
 }
@@ -40,6 +43,7 @@
   --bg: #0A0E14; --surface: #111722; --ink: #EEF1F5; --ink-2: #B4BBC7; --muted: #8590A0;
   --grid: #1E2632; --axis: #2E3846; --line: rgba(255,255,255,.08); --accent: #E3B341;
   --model: #B8871A; --trackman: #3987E5; --cloud: rgba(238,241,245,.14); --track: #1A212C; --field: #0D121A;
+  --lift: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
   color-scheme: dark;
 }
 
@@ -47,69 +51,86 @@
 body {
   margin: 0;
   background: var(--bg); color: var(--ink);
-  font: 400 16px/1.6 var(--font-body);
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 56px 72px;
+  font: 400 15px/1.5 var(--font-body);
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
-.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 56px; }
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 20px; }
 a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
 a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-header { display: grid; gap: 18px; max-width: 860px; }
-.eyebrow { font: 600 12px/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0; }
-h1 { font: 700 clamp(36px, 7vw, 60px)/1.02 var(--font-display); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
-.lede { font-size: 18px; color: var(--ink-2); max-width: 62ch; margin: 0; }
-.facts { display: flex; flex-wrap: wrap; gap: 12px 32px; margin: 6px 0 0; padding: 0; list-style: none; }
-.facts li { display: grid; gap: 2px; max-width: 22ch; }
-.facts b { font: 600 24px/1.1 var(--font-display); }
-.facts span { font-size: 13px; color: var(--muted); line-height: 1.4; }
+/* Top bar */
+.topbar { display: flex; align-items: center; gap: 16px; min-height: 44px; }
+.topbar .back { color: var(--ink-2); text-decoration: none; font-size: 14px; white-space: nowrap; }
+.topbar h1 { font: 800 clamp(20px, 2.4vw, 26px)/1 var(--font-display); letter-spacing: -.02em; margin: 0 auto 0 0; padding-left: 16px; border-left: 1px solid var(--line); }
+.topbar .source { font-size: 13.5px; font-weight: 500; text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; white-space: nowrap; transition: border-color .15s, color .15s; }
+@media (hover: hover) {
+  .topbar .back:hover { color: var(--ink); }
+  .topbar .source:hover { border-color: var(--accent); color: var(--accent); }
+}
 
-.why { display: grid; gap: 12px; max-width: 68ch; }
-.why h2, .method h2 { font: 600 clamp(20px, 3.2vw, 26px)/1.2 var(--font-display); margin: 0; }
-.why p { margin: 0; font-size: 16.5px; color: var(--ink-2); }
-.placeholder { border: 1.5px dashed var(--axis); border-radius: 10px; padding: 14px 16px; color: var(--muted); font-style: italic; }
+/* The tool */
+.tool {
+  display: grid; gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: var(--lift);
+  grid-template-columns: 300px minmax(0, 1fr) 270px;
+  grid-template-areas: "controls readout probs" "controls map probs";
+  grid-template-rows: auto 1fr;
+}
+.tool > * { background: var(--surface); min-width: 0; }
+.controls { grid-area: controls; padding: 20px; display: grid; gap: 18px; align-content: start; }
+.readout { grid-area: readout; padding: 22px 26px 6px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.stage { grid-area: map; padding: 8px 22px 18px; display: grid; gap: 10px; align-content: start; }
+.probs { grid-area: probs; padding: 22px 20px; display: grid; gap: 14px; align-content: start; }
 
-figure { margin: 0; display: grid; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px clamp(16px, 3vw, 28px) 20px; min-width: 0; }
-.fig-num { font: 600 12px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0; }
-figure h2 { font: 600 clamp(20px, 3.2vw, 26px)/1.2 var(--font-display); margin: 0; text-wrap: balance; }
-.read { font-size: 14.5px; color: var(--ink-2); margin: 0; max-width: 66ch; }
-.note { font-size: 13px; color: var(--muted); margin: 0; max-width: 72ch; }
-
-/* Identifier */
-.tool { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; align-items: start; }
-.controls { display: grid; gap: 18px; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--field); }
-.seg button { font: 500 13.5px/1 var(--font-body); color: var(--ink-2); background: none; border: 0; border-radius: 999px; padding: 8px 14px; cursor: pointer; }
-.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
-.label { font: 600 12px/1 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.label { font: 600 11.5px/1 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border-radius: 10px; padding: 3px; background: var(--track); }
+.seg button { font: 500 13.5px/1 var(--font-body); color: var(--ink-2); background: none; border: 0; border-radius: 8px; padding: 9px 12px; cursor: pointer; transition: background-color .15s, color .15s; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.14); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chips button { font: 500 13px/1 var(--font-body); color: var(--ink-2); background: var(--field); border: 1px solid var(--line); border-radius: 999px; padding: 8px 11px; cursor: pointer; }
-.chips button:hover { color: var(--ink); border-color: var(--axis); }
-fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 14px; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; min-width: 0; }
-legend { font: 600 14px/1 var(--font-display); padding: 0 6px; }
-fieldset label { display: grid; gap: 4px; font-size: 12.5px; color: var(--ink-2); min-width: 0; }
-fieldset label small { color: var(--muted); font-size: 11.5px; }
-fieldset input { font: 500 15px/1 var(--font-body); color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
+.chips button { font: 500 13px/1 var(--font-body); color: var(--ink-2); background: var(--field); border: 1px solid var(--line); border-radius: 999px; padding: 8px 11px; cursor: pointer; transition: border-color .15s, color .15s, background-color .15s, scale .15s ease-out; }
+.chips button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.chips button:active, .seg button:active { scale: .96; }
+@media (hover: hover) { .chips button:not([aria-pressed="true"]):hover { color: var(--ink); border-color: var(--axis); } }
+
+fieldset { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-width: 0; }
+legend { font: 600 11.5px/1 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 0; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+legend .dot-key { width: 10px; height: 10px; }
+fieldset label { position: relative; display: block; min-width: 0; }
+fieldset label:last-child { grid-column: 1 / -1; }
+fieldset label span { position: absolute; left: 11px; right: 11px; top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: var(--muted); pointer-events: none; }
+fieldset label small { position: absolute; right: 11px; bottom: 10px; font-size: 11.5px; color: var(--muted); pointer-events: none; }
+fieldset input { font: 600 17px/1 var(--font-display); color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 26px 11px 9px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; transition: border-color .15s; -moz-appearance: textfield; }
+fieldset input::-webkit-outer-spin-button, fieldset input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+fieldset input:focus { border-color: var(--accent); }
 fieldset input[aria-invalid="true"] { border-color: #D03B3B; }
-.out { display: grid; gap: 18px; min-width: 0; }
-.call { display: grid; gap: 4px; }
-.call .big { font: 700 clamp(30px, 5vw, 40px)/1.05 var(--font-display); letter-spacing: -.01em; }
-.call .sub { font-size: 14px; color: var(--ink-2); }
+
+.call { display: grid; gap: 6px; min-width: 0; }
+.call .big { font: 800 clamp(40px, 5.4vw, 64px)/.95 var(--font-display); letter-spacing: -.03em; }
+.call .sub { font-size: 14px; color: var(--ink-2); min-height: 1.5em; }
+.conf { text-align: right; }
+.conf b { display: block; font: 800 clamp(30px, 3.6vw, 44px)/1 var(--font-display); color: var(--model); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.conf span { font-size: 12px; color: var(--muted); }
+
 .plot { position: relative; width: 100%; min-width: 0; }
 svg { display: block; width: 100%; height: auto; overflow: visible; }
 svg text { font-family: var(--font-body); }
+#map { touch-action: none; cursor: crosshair; user-select: none; -webkit-user-select: none; }
+#map .drag { cursor: grab; }
+#map.dragging, #map.dragging .drag { cursor: grabbing; }
 
-.bars { display: grid; gap: 6px; }
-.bar-row { display: grid; grid-template-columns: 88px minmax(0, 1fr) 44px; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); }
-.bar-row .track { height: 10px; background: var(--track); border-radius: 0 4px 4px 0; position: relative; }
-.bar-row .fill { position: absolute; inset: 0 auto 0 0; background: var(--axis); border-radius: 0 4px 4px 0; transition: width .25s ease; }
+.bars { display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 10px; font-size: 13.5px; color: var(--ink-2); }
+.bar-row .track { grid-column: 1 / -1; grid-row: 2; height: 8px; background: var(--track); border-radius: 4px; position: relative; overflow: hidden; }
+.bar-row .fill { position: absolute; inset: 0 auto 0 0; background: var(--axis); border-radius: 4px; transition: width .25s var(--ease); }
 .bar-row.top { color: var(--ink); font-weight: 600; }
 .bar-row.top .fill { background: var(--model); }
 .bar-row .v { text-align: right; font-variant-numeric: tabular-nums; }
 
-.legend-key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); margin: 0; padding: 0; list-style: none; }
+.legend-key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink-2); margin: 0; padding: 0; list-style: none; }
 .legend-key li { display: inline-flex; align-items: center; gap: 8px; }
 .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
 .sw--model { background: var(--model); } .sw--tm { background: var(--trackman); }
@@ -118,152 +139,138 @@ svg text { font-family: var(--font-body); }
 .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12.5px; line-height: 1.4; padding: 7px 9px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, calc(-100% - 10px)); opacity: 0; transition: opacity .12s; z-index: 2; }
 .tip.on { opacity: 1; }
 
-details { font-size: 14px; color: var(--ink-2); }
-summary { cursor: pointer; color: var(--ink-2); font-weight: 500; }
-table { border-collapse: collapse; margin-top: 10px; font-size: 13.5px; font-variant-numeric: tabular-nums; width: 100%; max-width: 560px; }
-th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); }
-th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
-.mixups { margin: 0; padding-left: 18px; font-size: 14.5px; color: var(--ink-2); display: grid; gap: 4px; }
+/* Results */
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.facts li { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 4px; }
+.facts b { font: 700 26px/1.1 var(--font-display); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.facts span { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.card { margin: 0; display: grid; gap: 12px; align-content: start; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 14px; min-width: 0; }
+.card h2 { font: 600 16px/1.25 var(--font-display); margin: 0; text-wrap: balance; }
+details { font-size: 13px; color: var(--ink-2); }
+summary { cursor: pointer; color: var(--muted); font-weight: 500; }
+table { border-collapse: collapse; margin-top: 8px; font-size: 13px; font-variant-numeric: tabular-nums; width: 100%; }
+th, td { text-align: left; padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; font-size: 12px; }
+footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
+footer p { margin: 0; }
 
-.method { display: grid; gap: 14px; max-width: 860px; }
-.method ol { margin: 0; padding-left: 20px; display: grid; gap: 10px; color: var(--ink-2); font-size: 15px; }
-.method p { margin: 0; color: var(--ink-2); font-size: 15px; }
-.credit { font-size: 13.5px; color: var(--muted); }
-footer { font-size: 13px; color: var(--muted); }
-
+@media (max-width: 1180px) {
+  .tool { grid-template-columns: 300px minmax(0, 1fr); grid-template-areas: "controls readout" "controls map" "controls probs"; grid-template-rows: auto auto 1fr; }
+  .probs { padding-top: 4px; }
+  .bars { grid-template-columns: 1fr 1fr; gap: 10px 22px; }
+  .results { grid-template-columns: 1fr 1fr; }
+}
 @media (max-width: 760px) {
-  body { padding-block: 36px 56px; }
-  .wrap { gap: 44px; }
-  .tool { grid-template-columns: minmax(0, 1fr); }
-  .facts { gap: 12px 24px; }
-  .facts li { max-width: 44%; }
-  /* The charts scale down to phone width, so their text is set larger to land near 12px. */
+  body { padding-block: 12px 40px; }
+  .topbar { flex-wrap: wrap; gap: 10px 16px; }
+  .topbar .back { margin-right: auto; }
+  .topbar h1 { order: 3; flex-basis: 100%; border: 0; padding: 0; font-size: 24px; }
+  .tool { grid-template-columns: minmax(0, 1fr); grid-template-areas: "readout" "map" "controls" "probs"; grid-template-rows: none; border-radius: 16px; overflow: visible; }
+  .tool > :first-child { border-radius: 16px 16px 0 0; }
+  .tool > :last-child { border-radius: 0 0 16px 16px; }
+  .readout { position: sticky; top: 0; z-index: 3; padding: 14px 16px 10px; border-bottom: 1px solid var(--line); border-radius: 16px 16px 0 0; }
+  .call .big { font-size: 34px; }
+  .conf b { font-size: 28px; }
+  .stage { padding: 10px 12px 14px; }
+  .controls, .probs { padding: 16px; }
+  .facts { grid-template-columns: 1fr 1fr; }
+  .results { grid-template-columns: minmax(0, 1fr); }
+  /* The map scales down to phone width, so its text is set larger to land near 12px. */
   #map text { font-size: 19px; }
 }
-@media (prefers-reduced-motion: reduce) { .bar-row .fill, .tip { transition: none; } }
-/* Top bar: back to the portfolio and a link to the code, same as Four Fronts */
-.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: -32px; }
-.topbar .back { color: var(--ink-2); text-decoration: none; font-size: 15px; }
-.topbar .back:hover { color: var(--ink); }
-.topbar .source { font-size: 14px; font-weight: 500; text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; white-space: nowrap; }
-.topbar .source:hover { border-color: var(--accent); color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .bar-row .fill, .tip { transition: none; } .chips button:active, .seg button:active { scale: 1; } }
 </style>
 
 <div class="wrap">
   <nav class="topbar" aria-label="Site">
     <a class="back" href="https://s-milly.github.io/#projects">← Shawn Miller</a>
+    <h1>What pitch was that?</h1>
     <a class="source" href="https://github.com/s-milly/pitch-identifier" target="_blank" rel="noopener">View the code on GitHub</a>
   </nav>
-  <header>
-    <p class="eyebrow">Machine learning · Baseball</p>
-    <h1>What pitch was that?</h1>
-    <p class="lede">A model that names a pitch from its speed, spin, movement and spin direction. It learned from every MLB pitch of the 2024 and 2025 seasons, and it was tested on pitchers it never saw.</p>
-    <ul class="facts" id="facts"></ul>
-  </header>
 
-  <section class="why" aria-labelledby="why-title">
-    <h2 id="why-title">Why I started this project</h2>
-    <p>Every bullpen I throw at Clarion is followed by a Rapsodo report, and for a long time I did not know what most of the numbers meant. A curveball was just a curveball, and a fastball was just a fastball. That changed when we got a new pitching coach who taught us what the numbers mean and how to use them to get more out of our pitches. Spin, break and spin direction became the way we talked about whether a pitch was working. Once I understood that, I started to wonder if I could train a model to tell what pitch was thrown from the numbers alone. Using only speed, spin and movement, could it tell a slider from a cutter or a changeup from a splitter? This project was my chance to find out. I also wanted to test it on college pitchers like me, not only on big leaguers.</p>
-  </section>
+  <main class="tool">
+    <div class="readout">
+      <div class="call" aria-live="polite">
+        <span class="label" style="margin:0">The call</span>
+        <span class="big" id="call">Loading…</span>
+        <span class="sub" id="call-sub"></span>
+      </div>
+      <div class="conf" aria-hidden="true"><b id="conf"></b><span>sure</span></div>
+    </div>
 
-  <figure aria-labelledby="try-title">
-    <p class="fig-num">Try it</p>
-    <h2 id="try-title">Enter a pitch and the model will name it</h2>
-    <p class="read">Pick a starting pitch or type in numbers from a Rapsodo or TrackMan report. The model also needs your fastball, because it judges every pitch against the pitcher's own fastball. That is how it reads a college arm that throws a few mph slower than a big leaguer.</p>
-    <div class="tool">
-      <form class="controls" id="form" autocomplete="off" onsubmit="return false">
-        <div>
-          <p class="label">Throws</p>
-          <div class="seg" role="group" aria-label="Throwing hand">
-            <button type="button" data-hand="R" aria-pressed="true">Right</button>
-            <button type="button" data-hand="L" aria-pressed="false">Left</button>
-          </div>
-        </div>
-        <div>
-          <p class="label">Start from a typical MLB pitch</p>
-          <div class="chips" id="chips"></div>
-        </div>
-        <fieldset id="pitch">
-          <legend>The pitch</legend>
-        </fieldset>
-        <fieldset id="fastball">
-          <legend>Your fastball</legend>
-        </fieldset>
-        <p class="note">Horizontal break is positive toward your arm side. Spin direction is the clock tilt Rapsodo and TrackMan show, seen from behind the pitcher (a righty's fastball is about 1:15).</p>
-      </form>
-      <div class="out">
-        <div class="call" aria-live="polite">
-          <span class="label" style="margin:0">The model's call</span>
-          <span class="big" id="call">Loading the model…</span>
-          <span class="sub" id="call-sub"></span>
-        </div>
-        <div class="plot" id="map-wrap">
-          <svg id="map" viewBox="0 0 520 440" role="img" aria-labelledby="map-title"><title id="map-title">Movement map: vertical break against horizontal break, with MLB pitches in the background and your pitch marked</title></svg>
-          <div class="tip" id="map-tip"></div>
-        </div>
-        <ul class="legend-key">
-          <li><span class="dot-key" style="background:var(--model)"></span>Your pitch</li>
-          <li><span class="dot-key" style="border:2px solid var(--ink-2)"></span>Your fastball</li>
-          <li><span class="dot-key" style="background:var(--cloud)"></span><span id="cloud-key">2025 MLB pitches</span></li>
-        </ul>
-        <div>
-          <p class="label">How sure it is</p>
-          <div class="bars" id="probs"></div>
+    <div class="stage">
+      <div class="plot" id="map-wrap">
+        <svg id="map" viewBox="0 0 520 440" role="img" aria-labelledby="map-title"><title id="map-title">Movement map: vertical break against horizontal break, with MLB pitches in the background and your pitch marked. Drag the markers to change the break.</title></svg>
+        <div class="tip" id="map-tip"></div>
+      </div>
+      <ul class="legend-key">
+        <li><span class="dot-key" style="background:var(--model)"></span>Your pitch (drag it)</li>
+        <li><span class="dot-key" style="border:2px solid var(--ink-2)"></span>Your fastball</li>
+        <li><span class="dot-key" style="background:var(--cloud)"></span><span id="cloud-key">2025 MLB pitches</span></li>
+      </ul>
+    </div>
+
+    <form class="controls" id="form" autocomplete="off" onsubmit="return false">
+      <div>
+        <p class="label">Throws</p>
+        <div class="seg" role="group" aria-label="Throwing hand">
+          <button type="button" data-hand="R" aria-pressed="true">Right</button>
+          <button type="button" data-hand="L" aria-pressed="false">Left</button>
         </div>
       </div>
+      <div>
+        <p class="label">Typical MLB pitch</p>
+        <div class="chips" id="chips"></div>
+      </div>
+      <fieldset id="pitch">
+        <legend><span class="dot-key" style="background:var(--model)"></span>The pitch</legend>
+      </fieldset>
+      <fieldset id="fastball">
+        <legend><span class="dot-key" style="border:2px solid var(--ink-2)"></span>Your fastball</legend>
+      </fieldset>
+    </form>
+
+    <div class="probs">
+      <p class="label" style="margin:0">Every pitch type</p>
+      <div class="bars" id="probs"></div>
     </div>
-  </figure>
+  </main>
 
-  <figure aria-labelledby="mlb-title">
-    <p class="fig-num">Test 1 · MLB</p>
-    <h2 id="mlb-title">How often is it right on MLB pitchers it never saw?</h2>
-    <p class="read" id="mlb-read"></p>
-    <div class="plot" id="mlb-wrap"><svg id="mlb" role="img" aria-labelledby="mlb-svg-title"><title id="mlb-svg-title">Share of each MLB pitch type the model named correctly</title></svg><div class="tip" id="mlb-tip"></div></div>
-    <div>
-      <p class="label">Where it gets confused</p>
-      <ol class="mixups" id="mixups"></ol>
-    </div>
-    <details><summary>Show as a table</summary><table id="mlb-table"></table></details>
-  </figure>
+  <ul class="facts" id="facts"></ul>
 
-  <figure aria-labelledby="col-title">
-    <p class="fig-num">Test 2 · College</p>
-    <h2 id="col-title">Does a model trained on big leaguers work on college pitchers?</h2>
-    <p class="read" id="col-read"></p>
-    <ul class="legend-key">
-      <li><span class="sw sw--model"></span>This model</li>
-      <li><span class="sw sw--tm"></span>TrackMan's automatic tags</li>
-    </ul>
-    <div class="plot" id="col-wrap"><svg id="col" role="img" aria-labelledby="col-svg-title"><title id="col-svg-title">Share of college pitches matching the hand tag, by pitch type, for this model and for TrackMan</title></svg><div class="tip" id="col-tip"></div></div>
-    <details><summary>Show as a table</summary><table id="col-table"></table></details>
-  </figure>
+  <div class="results">
+    <figure class="card" aria-labelledby="mlb-title">
+      <h2 id="mlb-title">Named correctly, MLB pitchers it never saw</h2>
+      <div class="plot" id="mlb-wrap"><svg id="mlb" role="img" aria-labelledby="mlb-svg-title"><title id="mlb-svg-title">Share of each MLB pitch type the model named correctly</title></svg><div class="tip" id="mlb-tip"></div></div>
+      <details><summary>Table</summary><table id="mlb-table"></table></details>
+    </figure>
 
-  <figure aria-labelledby="fb-title">
-    <p class="fig-num">Test 2 · College</p>
-    <h2 id="fb-title">Slower fastballs fooled TrackMan, not the model</h2>
-    <p class="read" id="fb-read"></p>
-    <ul class="legend-key">
-      <li><span class="sw sw--model"></span>This model</li>
-      <li><span class="sw sw--tm"></span>TrackMan's automatic tags</li>
-    </ul>
-    <div class="plot" id="fb-wrap"><svg id="fbv" role="img" aria-labelledby="fb-svg-title"><title id="fb-svg-title">Share of hand-tagged fastballs called changeups, by fastball velocity</title></svg><div class="tip" id="fb-tip"></div></div>
-    <details><summary>Show as a table</summary><table id="fb-table"></table></details>
-  </figure>
+    <figure class="card" aria-labelledby="col-title">
+      <h2 id="col-title">College pitchers: model vs. TrackMan</h2>
+      <ul class="legend-key">
+        <li><span class="sw sw--model"></span>This model</li>
+        <li><span class="sw sw--tm"></span>TrackMan auto-tags</li>
+      </ul>
+      <div class="plot" id="col-wrap"><svg id="col" role="img" aria-labelledby="col-svg-title"><title id="col-svg-title">Share of college pitches matching the hand tag, by pitch type, for this model and for TrackMan</title></svg><div class="tip" id="col-tip"></div></div>
+      <details><summary>Table</summary><table id="col-table"></table></details>
+    </figure>
 
-  <section class="method" aria-labelledby="m-title">
-    <h2 id="m-title">How it was built</h2>
-    <ol>
-      <li><b>Data.</b> Every pitch from the 2024 and 2025 MLB regular seasons, pulled from Baseball Savant with the pybaseball library. Pitchers with fewer than 100 pitches in a season were left out, as were rare pitch types like knuckleballs and eephus pitches.</li>
-      <li><b>Features.</b> Velocity, spin rate, induced vertical break, horizontal break and spin direction, plus how far each pitch sits from the pitcher's own fastball (the median of that pitcher's hardest 15% of pitches). Lefties are mirrored so one model reads both sides.</li>
-      <li><b>Model.</b> A gradient-boosted tree model (LightGBM) with 8 pitch types. It runs in your browser, so nothing you type is sent anywhere.</li>
-      <li><b>Honest testing.</b> Scores come from 5-fold cross-validation split by pitcher, so the model is always graded on pitchers it never trained on. When it sees a whole outing, each pitch also votes with the 10 most similar pitches from the same pitcher.</li>
-      <li><b>College test.</b> The finished model, unchanged, was run on TrackMan data from college exhibition games, where a trained operator tagged every pitch by hand. Those tags use 5 broader groups, so the model's calls were folded into the same groups (a sinker counts as a fastball, a sweeper as a slider).</li>
-    </ol>
-    <p class="credit">College data: Pifer, N. D., <a href="https://data.mendeley.com/datasets/xfnz6mkdzm">Optical Tracking Data from College Baseball Scrimmages</a>, Mendeley Data, V3, doi:10.17632/xfnz6mkdzm.3, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Changes made: pitch types grouped as described above. MLB data from <a href="https://baseballsavant.mlb.com/">Baseball Savant</a>.</p>
-    <p class="credit">Code: <a href="https://github.com/s-milly/pitch-identifier">github.com/s-milly/pitch-identifier</a></p>
-  </section>
+    <figure class="card" aria-labelledby="fb-title">
+      <h2 id="fb-title">College fastballs called changeups</h2>
+      <ul class="legend-key">
+        <li><span class="sw sw--model"></span>This model</li>
+        <li><span class="sw sw--tm"></span>TrackMan auto-tags</li>
+      </ul>
+      <div class="plot" id="fb-wrap"><svg id="fbv" role="img" aria-labelledby="fb-svg-title"><title id="fb-svg-title">Share of hand-tagged fastballs called changeups, by fastball velocity</title></svg><div class="tip" id="fb-tip"></div></div>
+      <details><summary>Table</summary><table id="fb-table"></table></details>
+    </figure>
+  </div>
 
-  <footer>Built by Shawn Miller · <a href="https://s-milly.github.io/">s-milly.github.io</a></footer>
+  <footer>
+    <p>College data: Pifer, N. D., <a href="https://data.mendeley.com/datasets/xfnz6mkdzm">Optical Tracking Data from College Baseball Scrimmages</a>, Mendeley Data, V3, doi:10.17632/xfnz6mkdzm.3, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Changes made: pitch types grouped into 5 hand-tag groups. MLB data from <a href="https://baseballsavant.mlb.com/">Baseball Savant</a>.</p>
+    <p>Built by Shawn Miller · <a href="https://s-milly.github.io/">s-milly.github.io</a></p>
+  </footer>
 </div>
 
 <script>
@@ -271,8 +278,8 @@ const ORDER = ["Four-seam", "Sinker", "Cutter", "Slider", "Sweeper", "Curveball"
 const FIELDS = [
   { key: "velo", label: "Velocity", unit: "mph", step: "0.1" },
   { key: "spin", label: "Spin rate", unit: "rpm", step: "10" },
-  { key: "ivb", label: "Vertical break", unit: "in, induced", step: "0.1" },
-  { key: "hb", label: "Horizontal break", unit: "in, arm side +", step: "0.1" },
+  { key: "ivb", label: "Induced vert. break", unit: "in", step: "0.1" },
+  { key: "hb", label: "Horiz. break", unit: "in, arm +", step: "0.1" },
   { key: "clock", label: "Spin direction", unit: "clock tilt", step: null },
 ];
 const NS = "http://www.w3.org/2000/svg";
@@ -326,12 +333,12 @@ function buildForm() {
     const fs = $(which);
     for (const f of FIELDS) {
       const lab = document.createElement("label");
-      lab.innerHTML = `${f.label} <small>${f.unit}</small>`;
+      lab.innerHTML = `<span>${f.label}</span><small>${f.unit}</small>`;
       const inp = document.createElement("input");
       inp.id = `${which}-${f.key}`;
       if (f.step) { inp.type = "number"; inp.step = f.step; inp.inputMode = "decimal"; }
       else { inp.type = "text"; inp.inputMode = "numeric"; inp.placeholder = "1:15"; }
-      inp.addEventListener("input", update);
+      inp.addEventListener("input", () => { markPreset(null); update(); });
       lab.appendChild(inp);
       fs.appendChild(lab);
     }
@@ -339,7 +346,7 @@ function buildForm() {
   const chips = $("chips");
   for (const c of ORDER) {
     const b = document.createElement("button");
-    b.type = "button"; b.textContent = c;
+    b.type = "button"; b.textContent = c; b.dataset.preset = c; b.setAttribute("aria-pressed", "false");
     b.addEventListener("click", () => fill(c));
     chips.appendChild(b);
   }
@@ -354,7 +361,11 @@ function buildForm() {
   }));
 }
 
+function markPreset(type) {
+  document.querySelectorAll("[data-preset]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.preset === type));
+}
 function fill(type) {
+  markPreset(type);
   const pr = data.presets[type];
   for (const which of ["pitch", "fastball"]) {
     const v = pr[which];
@@ -416,11 +427,35 @@ function drawMap() {
   mapLayers.fb = el("circle", { r: 7, fill: "var(--surface)", stroke: "var(--ink-2)", "stroke-width": 2.5 }, mapLayers.marks);
   mapLayers.p = el("circle", { r: 8, fill: "var(--model)", stroke: "var(--surface)", "stroke-width": 2.5 }, mapLayers.marks);
   for (const [node, which] of [[mapLayers.p, "pitch"], [mapLayers.fb, "fastball"]]) {
-    const hit = el("circle", { r: 16, fill: "transparent", style: "cursor: default" }, mapLayers.marks);
-    node.hit = hit;
-    hit.addEventListener("pointerenter", () => showTip($("map-wrap"), $("map-tip"), node, tipFor(which)));
-    hit.addEventListener("pointerleave", () => $("map-tip").classList.remove("on"));
+    const hit = el("circle", { r: 18, fill: "transparent", class: "drag" }, mapLayers.marks);
+    node.hit = hit; hit.dataset.which = which;
+    hit.addEventListener("pointerenter", () => { if (!dragging) showTip($("map-wrap"), $("map-tip"), node, tipFor(which)); });
+    hit.addEventListener("pointerleave", () => { if (!dragging) $("map-tip").classList.remove("on"); });
   }
+  // Drag either marker to set its break; pressing anywhere else on the map moves your pitch there.
+  let dragging = null;
+  const toBreak = (e) => {
+    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+    const inv = (px, a, b) => MAP.min + (px - a) / (b - a) * (MAP.max - MAP.min);
+    const clamp = (v) => Math.round(Math.min(Math.max(v, MAP.min), MAP.max) * 10) / 10;
+    return { hb: clamp(inv(pt.x, MAP.l, MAP.w - MAP.r)), ivb: clamp(MAP.max - inv(pt.y, MAP.t, MAP.h - MAP.b) + MAP.min) };
+  };
+  const place = (e) => {
+    const v = toBreak(e);
+    $(`${dragging}-hb`).value = v.hb; $(`${dragging}-ivb`).value = v.ivb;
+    markPreset(null); update();
+    const node = dragging === "pitch" ? mapLayers.p : mapLayers.fb;
+    showTip($("map-wrap"), $("map-tip"), node, tipFor(dragging));
+  };
+  svg.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    dragging = e.target.dataset && e.target.dataset.which || "pitch";
+    svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
+    place(e); e.preventDefault();
+  });
+  svg.addEventListener("pointermove", (e) => { if (dragging) place(e); });
+  const end = () => { if (!dragging) return; dragging = null; svg.classList.remove("dragging"); $("map-tip").classList.remove("on"); };
+  svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
 }
 function tipFor(which) {
   return () => {
@@ -471,16 +506,17 @@ function update() {
   const p = read("pitch"), f = read("fastball");
   updateMap(p, f, null);
   if (!p || !f) {
-    $("call").textContent = "Check the highlighted boxes";
+    $("call").textContent = "Check the red boxes";
     $("call-sub").textContent = "Spin direction is a clock tilt like 1:15.";
+    $("conf").textContent = "–";
     return;
   }
   const prob = predict(features(p, f));
   const ranked = model.classes.map((c, i) => [c, prob[i]]).sort((a, b) => b[1] - a[1]);
   const [top, conf] = ranked[0];
   $("call").textContent = top;
-  $("call-sub").textContent = conf >= .8 ? `${pct(conf)} sure.` :
-    `${pct(conf)} sure, with ${ranked[1][0].toLowerCase()} next at ${pct(ranked[1][1])}.`;
+  $("conf").textContent = pct(conf);
+  $("call-sub").textContent = `Next: ${ranked[1][0].toLowerCase()} at ${ranked[1][1] < .005 ? "<1%" : pct(ranked[1][1])}`;
   updateMap(p, f, top);
   const box = $("probs");
   if (!box.children.length) for (const c of ORDER) {
@@ -544,17 +580,14 @@ function drawResults() {
     [n(m.pitches), "MLB pitches it learned from"],
     [pct(m.accuracy, 1), "right on MLB pitchers it never saw"],
     [pct(c.model, 1), "right on college pitchers"],
-    [pct(c.trackman, 1), "TrackMan's own auto-tags on the same college pitches"],
+    [pct(c.trackman, 1), "TrackMan's auto-tags on the same college pitches"],
   ].map(([b, s]) => `<li><b>${b}</b><span>${s}</span></li>`).join("");
 
-  $("mlb-read").textContent = `Graded on ${n(m.pitchers)} pitchers from ${m.seasons.join(" and ")}, each one hidden from the model while it trained. With a pitcher's whole outing to compare against, it named ${pct(m.accuracy, 1)} of pitches correctly. One pitch on its own, the way the tool above works, it named ${pct(m.accuracy_single, 1)}. Fastballs are close to automatic. Splitters and cutters are the hard ones.`;
   const mrows = ORDER.map((k) => ({ label: k, values: [m.recall[k]] }));
   barChart($("mlb"), $("mlb-wrap"), $("mlb-tip"), mrows, [{ color: "var(--model)" }],
     (r) => `${r.label}: ${pct(r.values[0], 1)} named correctly (${n(m.support[r.label])} pitches)`);
-  $("mixups").innerHTML = m.mixups.map((x) => `<li>${pct(x.share)} of ${x.actual.toLowerCase()}s were called ${x.called.toLowerCase()}s</li>`).join("");
   table("mlb-table", ["Pitch type", "Named correctly", "Pitches"], ORDER.map((k) => [k, pct(m.recall[k], 1), n(m.support[k])]));
 
-  $("col-read").textContent = `${n(c.pitches)} pitches from ${c.pitchers} college pitchers in exhibition games, each tagged by hand. The model never trained on a single college pitch. It matched the hand tag ${pct(c.model, 1)} of the time, against ${pct(c.trackman, 1)} for the automatic tags TrackMan recorded on the same pitches.`;
   const CORDER = ["Fastball", "Slider", "ChangeUp", "Curveball", "Cutter"];
   const NAMES = { ChangeUp: "Changeup" };
   const crows = CORDER.map((k) => ({ label: NAMES[k] || k, values: [c.by_type[k].model, c.by_type[k].trackman] }));
@@ -563,8 +596,6 @@ function drawResults() {
   table("col-table", ["Pitch type", "This model", "TrackMan"], crows.map((r) => [r.label, pct(r.values[0], 1), pct(r.values[1], 1)]));
 
   const fb = c.fastballs_called_changeup;
-  const slow = fb[0];
-  $("fb-read").textContent = `TrackMan's automatic tagger called ${pct(slow.trackman)} of fastballs at ${slow.band} mph changeups, and almost none over 90. The model judges each pitch against that pitcher's own fastball, so an 85 mph fastball still reads as a fastball. It called ${pct(fb.reduce((a, r) => a + r.model * r.pitches, 0) / fb.reduce((a, r) => a + r.pitches, 0), 1)} of all fastballs changeups.`;
   const frows = fb.map((r) => ({ label: r.band === "84 or less" ? "≤ 84 mph" : r.band === "over 90" ? "> 90 mph" : r.band.replace("-", "–") + " mph", values: [r.model, r.trackman], n: r.pitches }));
   barChart($("fbv"), $("fb-wrap"), $("fb-tip"), frows, [{ color: "var(--model)" }, { color: "var(--trackman)" }],
     (r, j) => `${r.label}: ${j ? "TrackMan" : "this model"} called ${pct(r.values[j])} changeups (${r.n} fastballs)`);
